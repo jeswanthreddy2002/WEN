@@ -1,0 +1,64 @@
+var debug = ""; 
+var firstCall = true; 
+var poi = "";
+
+function PreProcessFile() {}
+
+function ProcessRecord() {
+
+ Output_Table.LOAD_DATE = new Date();
+ try {
+						
+				UDF_PSGN.processMapping("DS_C1_METADATA", "JSONataAsOutputObject", Input_File.getColumn(0), Output_Table);
+				var FILE_NAME_STR=Input_File.getFileName();
+				Output_Table.FILE_NAME=FILE_NAME_STR;
+				Output_Table.PARENT_KEY=FILE_NAME_STR.substring(0,FILE_NAME_STR.indexOf("_"));
+				Output_Table.FILE_DATE=Convert.StringToDate(FILE_NAME_STR.substring(FILE_NAME_STR.lastIndexOf("."),FILE_NAME_STR.lastIndexOf("_")+1),'yyyyMMddHHmmss');
+				//added for 9460
+				var temp1 = Output_Table.SIMS_DEFAULT1;
+        var temp2 = Output_Table.SIMS_DEFAULT2;
+    //var SIMS_DEFAULT = Output_Table.SIMS_DEFAULT1 + "~" + Output_Table.SIMS_DEFAULT2;
+var SIMS_DEFAULT = temp1+ "~" + temp2;
+       Output_Table.SIMS_DEFAULT = SIMS_DEFAULT.replace(/^~/,'').replace(/~$/,'');
+				//ended  for 9460
+				
+			
+ 	//Output_Table.PRIMARY_IND = Output_Table.PRIMARY_IND.toUpperCase();
+ 	var v_primary_ind=Output_Table.PRIMARY_IND.split('~');
+ 	//var v_SIMS_DEFAULT1 =   Output_Table.SIMS_DEFAULT1.split('~');
+ 	 //var v_SIMS_DEFAULT2 =   Output_Table.SIMS_DEFAULT2.split('~');
+ 	for (var j=0; j< v_primary_ind.length;j++)
+			 {
+			 if (v_primary_ind[j]=='True')
+			 {
+			 Output_Table.PRIMARY_IND=v_primary_ind[j].toUpperCase();
+			  //Output_Table.SIMS_DEFAULT  =   Output_Table.SIMS_DEFAULT1 + "~" + Output_Table.SIMS_DEFAULT2;
+	 }		 
+			 
+			 }
+    var result=[];
+			  	
+ var containedEntityMetadata_paths=Output_Table.SHAPES_CODE_ISPRIMARY.split('~');
+  for (var i = 0; i < containedEntityMetadata_paths.length; i++) {
+  	var path = containedEntityMetadata_paths[i];
+  	var match = path.match(/productSpecCharacteristicValue\[value='(.*?)'\]/);
+							result.push(match[1]);
+						
+
+	}
+	if(result.length>0)
+	{
+		result=result.sort().join('~');
+	}
+	Output_Table.SHAPES_CODE_ISPRIMARY=result;
+
+			 
+			 if ( FILE_NAME_STR.indexOf("adhoc") >= 0) {
+				Output_Table.FEED_TYPE = "ADHOC" ;
+				} else
+				Output_Table.FEED_TYPE = "FULL" ; 
+ } catch (err) {
+ Input_File.WriteToError(err + "ERR" + debug);
+ }
+ return "";
+}
