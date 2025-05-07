@@ -1,0 +1,28 @@
+	function convertObjectToCSV(i_InpFieldnames,i_Seperator) {
+	var outputStr1 = "";
+  i_Seperator = ";" ;
+	var Fields  = [];
+	//Shell.printToTrace("input data"+i_InpFieldnames);
+ 	Fields	=  i_InpFieldnames.split('~');
+ 	
+ 	
+ 	//Input_File.WriteToError("CSV FUNCTION" + i_InpFieldnames);
+  for (var i = 0; i < Fields.length; i++ ) {
+	//outputStr += i_InpObject[key] + i_Seperator;
+	//keyStr += key; 
+
+
+		var input =  this.coreObjects.Output[Fields[i]] ;
+	
+	/*	if(input == i_InpObject.LOAD_DATE || input == i_InpObject.REC_UPDATE_DT || input == i_InpObject.DUMMY || input == i_InpObject.SPLIT_COLS) {
+		continue;   
+		} */  
+			if(input == "" || input == undefined || input == '""') {
+				input = "NULL";
+			}
+		outputStr1 += Fields[i] +"="+ input + i_Seperator;
+							
+  	}
+	return outputStr1.slice(0,-1);
+	//Input_File.WriteToError("OUTPUTSTRING" + outputStr1); 
+	}

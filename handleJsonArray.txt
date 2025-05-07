@@ -1,0 +1,84 @@
+function handleJSONArray(inpObjArray,parameter)
+{
+  debug = debug + "Inside handleJSONArray";
+
+  var JSONArraySize = inpObjArray.size();
+
+  var finalResult = "";
+  var finalResultArray = [];
+
+  for(var j=0; j<JSONArraySize; j++)
+  {
+    //debug = debug + "|Interation " + j + " for " + parameter + "\n";
+    // Each iteration results a Jason Object - this may be a Json object or another array - parenet process to handle that.
+    //debug = debug + "--------ITERATION ------ " + j;
+    
+    var temp = inpObjArray.get(j);
+    var	returnResult;
+    
+    if ((temp.isJsonObject() == false ) && (temp.isJsonArray() == false))
+			returnResult = temp.getAsString();
+		else		
+     returnResult = UDF_PSGNJson_processJsonByParamter(inpObjArray.get(j),parameter);
+
+    //debug = debug + "|After Array Call result --" + returnResult+ "--" + "this.exprValid--" + this.exprValid + "--";
+    //debug = debug + "-------------- ";
+
+    // Additional condition(multiPathInput) allows to get out of 1st tree as soon as condition is met.
+    // Else system loops through the array - expecting to get a result. No meaning to have array only with conditions.
+    // TEST to have an invalid element on array + 1 condition.
+    // Test to have an valid elemebt on  array + 1 conditon
+
+
+    if (this.multiPathInput && this.exprValid) // fpr multipath 1st iteratuon which returns true suffices.
+      return returnResult;
+
+    //if ((returnResult != "" && returnResult != null) && (this.exprValid)) // take only valid results and where there was a result.
+    if (returnResult != "" && returnResult != null)  // exprValid may not have relevane since in case of false "" will be rteurned.
+    {
+
+      var strResult = "" + returnResult +  "";
+
+      var resultArray = strResult.split("|"); // Split the separate fields received.
+
+      //debug = debug +  "resultArray Size: " + resultArray.length;
+      //debug = debug +  "typeof : " + typeof returnResult;
+
+      if (finalResultArray.length == 0)
+        finalResultArray = resultArray;
+      else
+      {
+        for(var i=0; i<resultArray.length; i++)
+        {
+          finalResultArray[i] = finalResultArray[i] + "~" + resultArray[i];
+        }
+      }
+
+      //debug = debug + "finalResultArray size" + finalResultArray.length;
+    }
+
+    // Below is no longer relevant since we now return an array
+    /*if (((returnResult != "" && returnResult != null) && (this.exprValid)) || (this.multiPathInput && this.exprValid) )
+    {
+    	//debug = debug + "|After Array Call result --" + returnResult+ "--";
+    	return returnResult;
+    }*/
+  }
+
+  if (finalResultArray.length > 0)
+  {
+    finalResult = finalResultArray.join("|");
+
+		// SA -20-6-22 - when we have multiple array elements to be returned for multi output we need this
+    if (finalResultArray.length = 1)
+    	finalResult = finalResult + "|";
+   	// SA 20.6.22 ends
+
+   //debug = debug + "finalResult : " + finalResult;
+    return finalResult;
+  }
+
+
+  return "";
+}
+

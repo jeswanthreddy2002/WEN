@@ -1,0 +1,128 @@
+function executeFunction(inpFunctionString) {
+     	
+    try {
+        var funcObject = UDF_PSGNDynamicFunction.getFunctionObject(inpFunctionString);
+
+        debug = debug + "\n Starting executeFunction";
+
+        if ((typeof funcObject == "undefined") || (funcObject == "")) // when the string doesnt exist.
+            return null;
+
+
+        var packageObject = funcObject.packageObjectName;
+        var packageObjectAttributeName = funcObject.packageObjectAttributeName;
+        var functionName = funcObject.functionName;
+
+        // The below needed for Input and Output objects since they get changed based on the record and multiple calls being made.
+        // So what gets created in funcObject.packageObjectName may no longer be valid, as that happens once per function definition.
+        // refresh the definitions of the stored objects input and output.
+
+        if (inpFunctionString.substr(0, 7) == "Output.")
+            packageObject = this.coreObjects.Output;
+        else if (inpFunctionString.substr(0, 6) == "Input.")
+            packageObject = this.coreObjects.Input;
+
+        var finalPackageObject;
+        if (packageObjectAttributeName != null)
+            finalPackageObject = packageObject[packageObjectAttributeName];
+        else
+            finalPackageObject = packageObject;
+
+
+
+        var debug = "";
+        debug = debug + "\n executeFunction inpFunctionString " + inpFunctionString;
+        debug = debug + "\n executeFunction packageObject " + packageObject;
+        debug = debug + "\n executeFunction packageObjectAttributeName " + packageObjectAttributeName;
+        debug = debug + "\n executeFunction packageObject[packageObjectAttributeName] " + packageObject[packageObjectAttributeName];
+        debug = debug + "\n executeFunction functionName " + functionName;
+        debug = debug + "\n executeFunction finalPackageObject " + finalPackageObject;
+        //Shell.printToTrace(debug);
+
+        if (typeof finalPackageObject == "undefined")
+            finalPackageObject = packageObject; // In future we may need to do this as "packageObject" + "."+packageObjectAttributeName
+
+
+        //			if (finalPackageObject == "undefined" || finalPackageObject == "" || finalPackageObject == null)
+        if ((typeof finalPackageObject == "undefined") || (finalPackageObject == "undefined") || (finalPackageObject == null))
+            throw ("Function Object " + finalPackageObject + "undefined");
+
+
+        var finalArguments = [];
+        if (funcObject.arguments.length > 0) {
+            for (var i = 0; i < funcObject.arguments.length; i++) {
+                var currArgumentObject = funcObject.arguments[i];
+                var argumentObject = currArgumentObject.object;
+                var attributeName = currArgumentObject.attributeName;
+
+                var attributeValue;
+
+                // SA 22.11
+                var argumentObjectName = currArgumentObject.name;
+
+                if (argumentObjectName == "Output")
+                    argumentObject = this.coreObjects.Output;
+                else if (argumentObjectName == "Input")
+                    argumentObject = this.coreObjects.Input;
+                // End
+
+
+                attributeValue = argumentObject;
+
+                if (attributeName != null)
+                    attributeValue = argumentObject[attributeName];
+                    
+                //Shell.printToTrace(" Checking argumentObjectName:" + argumentObjectName + "|" + argumentObject + " and attributeName  " + attributeName + "attributeValue " + attributeValue );
+                
+
+                if (typeof attributeValue == "undefined")
+                    attributeValue = argumentObject;
+
+                finalArguments[i] = attributeValue;
+
+            }
+        }
+
+				//Shell.printToTrace("Now will execute the function " + inpFunctionString);
+        var result;
+
+        if (typeof finalPackageObject[functionName] == "function") {
+
+            if (finalArguments.length == 0)
+                result = finalPackageObject[functionName]();
+            else {
+                result = finalPackageObject[functionName].apply(finalPackageObject, finalArguments);
+                //result = finalPackageObject[functionName](...finalArguments);	
+            }
+
+        } //if function check		
+        else if (typeof finalPackageObject[functionName] != "undefined") // allow non function Object properites . Example ABCDEF.length will be called as ABCDEF.length() 
+            result = finalPackageObject[functionName];
+        else
+            result = null;
+
+
+        if ((typeof result == "undefined") || (result == "undefined")) // Shell.printToTrace - doesnt return anything.
+            result = null;
+
+
+        //Shell.printToTrace("Result Functio for " + inpFunctionString + ": is : " + result);
+        // SA 22.11.21 - make all results as strings for now. Without this the MultiOutput breaks due to split.
+        // SA 12.10.21 - reverted. The multi was fixed to handle such scenarios.
+        //if (result != null)
+        //	result = result + ""; 
+        return result;
+
+    } catch (err) {
+        Shell.printToTrace("Error to execute function " + inpFunctionString + "\nERROR : " +
+            err +
+            "\nfinalPackageObject:" + finalPackageObject +
+            ",packageObjectAttributeName:" + packageObjectAttributeName +
+            ",functionName:" + functionName + ",finalArguments:" + finalArguments); // To be replaced in MM
+
+        return null;
+
+    }
+
+
+}
